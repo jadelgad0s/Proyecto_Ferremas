@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Órdenes de Despacho | Ferremas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+</head>
+<body class="d-flex flex-column min-vh-100" style="background-color: #f8f9fa;">
+
+<!-- HEADER -->
+<header class="py-3 px-4 d-flex justify-content-between align-items-center border-bottom bg-white">
+  <a href="{% url 'Ferremas:vendedor' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <img src="{% static 'img/LOGO_FERREMAS_NEGRO.png' %}" alt="FERREMAS" style="height: 45px;">
+  <div class="d-flex align-items-center gap-3">
+    <a href="{% url 'Ferremas:logout' %}" class="btn btn-outline-dark btn-sm">
+      <i class="bi bi-box-arrow-right me-1"></i> Salir
+    </a>
+      <span><i class="bi bi-person-circle me-1"></i> {{ request.session.usuario_nombre }}</span>
+  </div>
+</header>
+
+<!-- CONTENIDO -->
+<div class="container my-4">
+  <div class="mb-3 d-flex justify-content-between align-items-center">
+    <div>
+      <h5 class="fw-bold">Órdenes de Despacho</h5>
+      <form method="get" class="d-flex flex-wrap gap-3 mt-2">
+        <input name="busqueda" type="text" class="form-control form-control-sm" placeholder="Buscar orden por número o cliente" style="max-width: 280px;" value="{{ request.GET.busqueda }}">
+        <div class="d-flex align-items-center gap-2">
+          <label class="form-check-label mb-0">Estado:</label>
+          <select name="estado" class="form-select form-select-sm" style="max-width: 120px;">
+            <option {% if request.GET.estado == "Todos" or not request.GET.estado %}selected{% endif %}>Todos</option>
+            <option {% if request.GET.estado == "Pendiente" %}selected{% endif %}>Pendiente</option>
+            <option {% if request.GET.estado == "Enviado" %}selected{% endif %}>Enviado</option>
+          </select>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <label class="form-check-label mb-0">Tipo de Entrega:</label>
+          <select name="tipo_entrega" class="form-select form-select-sm" style="max-width: 150px;">
+            <option {% if request.GET.tipo_entrega == "Todos" or not request.GET.tipo_entrega %}selected{% endif %}>Todos</option>
+            <option {% if request.GET.tipo_entrega == "Domicilio" %}selected{% endif %}>Domicilio</option>
+            <option {% if request.GET.tipo_entrega == "Retiro en Tienda" %}selected{% endif %}>Retiro en Tienda</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-outline-dark btn-sm">
+          <i class="bi bi-arrow-repeat me-1"></i> Actualizar Órdenes
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle text-center">
+      <thead class="table-light">
+        <tr>
+          <th>N° PEDIDO</th>
+          <th>CLIENTE</th>
+          <th>FECHA</th>
+          <th>MÉTODO ENTREGA</th>
+          <th>ESTADO</th>
+          <th>ACCIÓN</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pedido in ordenes %}
+        <tr>
+          <td>{{ pedido.id|stringformat:"s"|slice:":6" }}</td>
+          <td>{{ pedido.id_cliente.nombre }} {{ pedido.id_cliente.apellido }}</td>
+          <td>{{ pedido.fecha }}</td>
+          <td>
+            {% if pedido.id_carrito.id_direccion %}
+              Domicilio
+            {% else %}
+              Retiro en Tienda
+            {% endif %}
+          </td>
+          <td>{{ pedido.estado }}</td>
+          <td>
+            {% if pedido.estado == "Pendiente" %}
+              <form method="post" action="{% url 'Ferremas:marcar_enviado' pedido.id %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-dark" type="submit">
+                  <i class="bi bi-truck"></i> Enviar
+                </button>
+              </form>
+            {% else %}
+              <button class="btn btn-outline-success btn-sm" disabled>
+                <i class="bi bi-check-circle"></i> Enviado
+              </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center">No hay órdenes disponibles.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="bg-primary text-white text-center py-2 mt-auto">
+  <small>&copy; 2025 FERREMAS. Todos los derechos reservados. | contacto@ferremas.cl | +56 9 1234 5678</small>
+</footer>
+
+</body>
+</html>
