@@ -85,20 +85,26 @@
           <td>{{ pedido.fecha }}</td>
           <td>{{ pedido.estado }}</td>
           <td>
-            {% if pedido.estado == "Pendiente" %}
+            {% if pedido.estado == "Pagado" %}
               <form method="POST" action="{% url 'Ferremas:preparar_pedido' pedido.id %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-primary btn-sm">Preparar</button>
+                <button type="submit" class="btn btn-primary btn-sm">
+                  <i class="bi bi-box-seam"></i> Preparar
+                </button>
               </form>
             {% elif pedido.estado == "Preparado" %}
               <form method="POST" action="{% url 'Ferremas:entregar_a_vendedor' pedido.id %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-success btn-sm">Entregar a Vendedor</button>
+                <button type="submit" class="btn btn-success btn-sm">
+                  <i class="bi bi-truck"></i> Entregar a Vendedor
+                </button>
               </form>
             {% elif pedido.estado == "Entregado" %}
               <button class="btn btn-outline-success btn-sm" disabled>
                 <i class="bi bi-check-circle"></i> Entregado
               </button>
+            {% else %}
+              <span class="text-muted">—</span>
             {% endif %}
           </td>
         </tr>

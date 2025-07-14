@@ -62,51 +62,13 @@
     </div>
     <div class="offcanvas-body">
       <ul class="nav flex-column">
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-tools me-2"></i> Herramientas Manuales
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-lightning-charge-fill me-2"></i> Herramientas Eléctricas
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-nut me-2"></i> Tornillos y Fijaciones
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-box-seam me-2"></i> Accesorios y Repuestos
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-droplet-half me-2"></i> Gasfitería y Plomería
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-lightbulb-fill me-2"></i> Electricidad
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-bricks me-2"></i> Maderas y Construcción
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-paint-bucket me-2"></i> Pinturas y Adhesivos
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-shield-check me-2"></i> Limpieza y Seguridad
-          </a>
-        </li>
+        {% for tipo in tipos_productos %}
+          <li class="nav-item">
+            <a class="nav-link text-white" href="{% url 'Ferremas:productos_por_categoria' tipo.id %}">
+              <i class="bi bi-chevron-right me-2"></i> {{ tipo.nombre }}
+            </a>
+          </li>
+        {% endfor %}
       </ul>
     </div>
   </div>

@@ -50,7 +50,7 @@
           <select name="estado" class="form-select form-select-sm" style="max-width: 140px;">
             <option value="">Todos</option>
             <option value="Pendiente" {% if request.GET.estado == "Pendiente" %}selected{% endif %}>Pendiente</option>
-            <option value="Pagado" {% if request.GET.estado == "Pagado" %}selected{% endif %}>Confirmado</option>
+            <option value="Pagado" {% if request.GET.estado == "Pagado" %}selected{% endif %}>Pagado</option>
           </select>
         </div>
 
@@ -86,8 +86,10 @@
                 {% csrf_token %}
                 <button type="submit" class="btn btn-success btn-sm">Confirmar</button>
               </form>
+            {% elif pago.estado == "Pagado" %}
+              <span class="text-success"><i class="bi bi-check-circle"></i> Pagado</span>
             {% else %}
-              <span class="text-success">Confirmado</span>
+              <span class="text-muted">-</span>
             {% endif %}
           </td>
         </tr>

@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'rest_framework',#api
     'Ferremas.apps.FerremasConfig',#--> Incluir la aplicación
     'cloudinary',
-    'cloudinary_storage',
+    'cloudinary_storage',   
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [

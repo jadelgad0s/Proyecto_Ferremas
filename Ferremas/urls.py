@@ -49,6 +49,22 @@ urlpatterns = [
     path('ordenes_pedido/preparar/<uuid:pedido_id>/', preparar_pedido, name='preparar_pedido'),
     path('ordenes_pedido/entregar/<uuid:pedido_id>/', entregar_a_vendedor, name='entregar_a_vendedor'),
     path('api/informe_desempeno/', datos_informe_desempeno, name='api_informe_desempeno'),
+    path('categoria/<uuid:tipo_id>/', productos_por_categoria, name='productos_por_categoria'),
+    path('proveedor/<uuid:proveedor_id>/', productos_por_proveedor, name='productos_por_proveedor'),
+    path('pedidos/<int:pedido_id>/aprobar/', aprobar_pedido, name='aprobar_pedido'),
+    path('pedidos/<int:pedido_id>/rechazar/', rechazar_pedido, name='rechazar_pedido'),
+    path('pedidos/<int:pedido_id>/reintentar/', reintentar_pedido, name='reintentar_pedido'),
+    path('pedidos/<uuid:pedido_id>/detalle/', detalle_pedido, name='detalle_pedido'),
+    path('mi-cuenta/direccion/', gestionar_direccion, name='gestionar_direccion'),
+    path('mi-cuenta/direccion/<uuid:direccion_id>/', gestionar_direccion, name='editar_direccion'),
+    path('api/comunas/<uuid:region_id>/', obtener_comunas_por_region, name='api_comunas_por_region'),
+    path('direccion/eliminar/<uuid:direccion_id>/', eliminar_direccion, name='eliminar_direccion'),
+
+
+    path('api/productos/', ProductoApiView.as_view(), name='api_productos'),
+    path('api/productos/<uuid:pk>/', ProductoDetalleApiView.as_view(), name='api_producto_detalle'),
+    path('api/productos/', ProductoListCreateAPIView.as_view(), name='api-producto-list-create'),
+    path('api/productos/<uuid:pk>/', ProductoRetrieveUpdateDestroyAPIView.as_view(), name='api-producto-detail'),
 
     # URLs para la API del carrito
     path('carrito/agregar/', agregar_al_carrito, name='agregar_al_carrito_api'),

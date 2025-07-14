@@ -78,28 +78,38 @@
       </thead>
       <tbody>
         {% for entrega in entregas %}
-        <tr>
-          <td>{{ entrega.pedido.id_cliente.nombre }} {{ entrega.pedido.id_cliente.apellido }}</td>
-          <td>#{{ entrega.pedido.id|stringformat:"s" }}</td>
-          <td>{{ entrega.fecha }}</td>
-          <td>{{ entrega.estado }}</td>
-          <td>
-            {% if entrega.estado == "Por Registrar" %}
-              <form method="POST" action="{% url 'Ferremas:registrar_entrega' entrega.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary btn-sm">Registrar Entrega</button>
-              </form>
-            {% else %}
-              <button class="btn btn-outline-success btn-sm" disabled>
-                <i class="bi bi-check-lg"></i>
-              </button>
-            {% endif %}
-          </td>
-        </tr>
+          <tr>
+            <td>{{ entrega.pedido.id_cliente.nombre }} {{ entrega.pedido.id_cliente.apellido }}</td>
+            <td>#{{ entrega.pedido.id|stringformat:"06d" }}</td>
+            <td>{{ entrega.fecha }}</td>
+            <td>
+              {% if entrega.estado == "Por Registrar" %}
+                <span class="badge bg-warning text-dark">Por Registrar</span>
+              {% elif entrega.estado == "Registrado" %}
+                <span class="badge bg-success">Registrado</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ entrega.estado }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if entrega.estado == "Por Registrar" %}
+                <form method="POST" action="{% url 'Ferremas:registrar_entrega' entrega.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-box-arrow-in-down"></i> Registrar Entrega
+                  </button>
+                </form>
+              {% else %}
+                <button class="btn btn-outline-success btn-sm" disabled>
+                  <i class="bi bi-check-circle-fill"></i> Registrado
+                </button>
+              {% endif %}
+            </td>
+          </tr>
         {% empty %}
-        <tr>
-          <td colspan="5" class="text-center">No hay entregas disponibles.</td>
-        </tr>
+          <tr>
+            <td colspan="5" class="text-center text-muted">No hay entregas disponibles.</td>
+          </tr>
         {% endfor %}
       </tbody>
     </table>

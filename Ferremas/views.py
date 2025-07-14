@@ -25,12 +25,11 @@ from django.conf import settings # Para acceder a las credenciales de settings.p
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics
 from .models import Usuario
 from supabase import create_client
 from django.conf import settings
-
-
+from .serializers import ProductoSerializer 
 
 @rol_requerido(['Administrador'])
 def editar_usuario(request, id):
@@ -145,7 +144,10 @@ class UsuariosExistentesApiView(APIView):
         return Response(lista_usuarios, status=status.HTTP_200_OK)
 
 def pagina_registro(request):
-    return render(request, 'web/registro.html')
+    tipos_productos = TipoProducto.objects.all()
+    return render(request, 'web/registro.html', {
+        'tipos_productos': tipos_productos
+    })
 
 class RegistroApiView(APIView):
 
@@ -207,7 +209,10 @@ class RegistroApiView(APIView):
 
 
 def pagina_login(request):
-    return render(request, 'web/login.html')
+    tipos_productos = TipoProducto.objects.all()
+    return render(request, 'web/login.html', {
+        'tipos_productos': tipos_productos
+    })
 
 class LoginApiView(APIView):
     
@@ -257,7 +262,7 @@ class LoginApiView(APIView):
 
 
 def index(request):
-    # Limpiar mensajes previos (fuerza a consumirlos)
+    # Limpiar mensajes previos
     list(get_messages(request))
 
     cart = _get_or_create_cart(request)
@@ -267,10 +272,24 @@ def index(request):
         cart_items_count = result['total_cantidad'] if result['total_cantidad'] is not None else 0
 
     productos_destacados = Producto.objects.all().order_by('-id')[:6]
+    tipos_productos = TipoProducto.objects.all()
+
+    # Obtener proveedor Einhell
+    einhell = Proveedor.objects.get(nombre__icontains='einhell')
+
+    # Obtener categorías específicas para el carrusel
+    categoria_herramientas = TipoProducto.objects.get(nombre__icontains="herramienta")
+    categoria_pintura = TipoProducto.objects.get(nombre__icontains="pintura")
+    categoria_construccion = TipoProducto.objects.get(nombre__icontains="construcción")
 
     return render(request, 'web/index.html', {
         'cart_items_count': cart_items_count,
-        'productos': productos_destacados
+        'productos': productos_destacados,
+        'tipos_productos': tipos_productos,
+        'einhell_id': einhell.id,
+        'categoria_herramientas': categoria_herramientas,
+        'categoria_pintura': categoria_pintura,
+        'categoria_construccion': categoria_construccion,
     })
 
 def _get_or_create_cart(request):
@@ -544,12 +563,12 @@ def confirmar_correo(request):
 @rol_requerido(['Cliente'])
 @never_cache 
 def cuenta_cliente(request):
-    email_sesion = request.session.get('user_email')  # debe ser el mismo key que usas en login
+    email_sesion = request.session.get('user_email')
     access_token = request.session.get('access_token')
     refresh_token = request.session.get('refresh_token')
 
     if not email_sesion or not access_token or not refresh_token:
-        messages.info(request, "Sesión expirada. Por favor Inicia sesion nuevamente.")
+        messages.info(request, "Sesión expirada. Por favor Inicia sesión nuevamente.")
         return redirect('Ferremas:login')
 
     try:
@@ -558,6 +577,7 @@ def cuenta_cliente(request):
         messages.info(request, "Usuario no encontrado.")
         return redirect('Ferremas:login')
 
+    # --- CAMBIO DE CONTRASEÑA ---
     if request.method == 'POST' and request.POST.get('accion') == 'cambiar_contrasena':
         nueva_contrasena = request.POST.get('nueva_contrasena')
         confirmar_contrasena = request.POST.get('confirmar_contrasena')
@@ -567,7 +587,6 @@ def cuenta_cliente(request):
         elif nueva_contrasena != confirmar_contrasena:
             messages.info(request, 'Las contraseñas no coinciden. Por favor verifica')
         else:
-            # Validaciones de seguridad para la nueva contraseña
             if not any(c.isupper() for c in nueva_contrasena):
                 messages.info(request, 'La contraseña debe contener al menos una letra mayúscula')
             elif not any(c.isdigit() for c in nueva_contrasena):
@@ -576,7 +595,6 @@ def cuenta_cliente(request):
                 messages.info(request, 'La contraseña debe tener al menos 8 caracteres')
             else:
                 try:
-                    # Refrescar sesión para obtener tokens válidos
                     session_data = supabase.auth.refresh_session(refresh_token)
                     if not session_data.session:
                         messages.info(request, "No se pudo renovar la sesión. Por favor inicia sesión nuevamente.")
@@ -587,33 +605,24 @@ def cuenta_cliente(request):
                     request.session['access_token'] = access_token
                     request.session['refresh_token'] = refresh_token
 
-                    # Establecer la sesión actual en supabase
                     supabase.auth.set_session(access_token, refresh_token)
-
-                    # Cambiar la contraseña
                     response = supabase.auth.update_user({"password": nueva_contrasena})
 
-                    print("Supabase update_user response:", response)
-
                     if response.user:
-
                         try:
                             login_response = supabase.auth.sign_in_with_password({
                                 'email': email_sesion,
                                 'password': nueva_contrasena
                             })
 
-                            print("Intento login con nueva contraseña:", login_response)
-
                             if login_response.user and login_response.session:
                                 messages.success(request, 'Contraseña actualizada correctamente. Por favor, inicia sesión con tu nueva contraseña.')
                             else:
-                                messages.info(request, 'No se pudo iniciar sesión con la nueva contraseña. Intenta nuevamente.')
+                                messages.info(request, 'No se pudo iniciar sesión con la nueva contraseña.')
 
                         except Exception as e_login:
                             messages.info(request, f'Error iniciando sesión tras cambio: {str(e_login)}')
 
-                        # Cerrar sesión para forzar re-login
                         for key in ['user_email', 'supabase_uid', 'access_token', 'refresh_token', 'usuario_id', 'usuario_nombre', 'usuario_rol']:
                             if key in request.session:
                                 del request.session[key]
@@ -625,10 +634,105 @@ def cuenta_cliente(request):
 
         return redirect('Ferremas:cuenta_cliente')
 
+    # --- ACTUALIZAR BOLETÍN ---
+    if request.method == 'POST' and request.POST.get('accion') == 'boletin':
+        usuario.boletin = not getattr(usuario, 'boletin', False)
+        usuario.save()
+        messages.success(request, 'Preferencia del boletín actualizada.')
+        return redirect('Ferremas:cuenta_cliente')
+
+    # --- GUARDAR DIRECCIÓN ---
+    if request.method == 'POST' and request.POST.get('accion') == 'guardar_direccion':
+        calle = request.POST.get('calle')
+        num_calle = request.POST.get('num_calle')
+        id_comuna = request.POST.get('id_comuna')
+        id_region = request.POST.get('id_region')
+
+        if calle and num_calle and id_comuna and id_region:
+            try:
+                comuna = Comuna.objects.get(id=id_comuna)
+                region = Region.objects.get(id=id_region)
+                Direccion.objects.create(
+                    calle=calle,
+                    num_calle=num_calle,
+                    id_comuna=comuna,
+                    id_region=region,
+                    id_usuario=usuario
+                )
+                messages.success(request, 'Dirección guardada correctamente.')
+            except Exception as e:
+                messages.error(request, f'Error al guardar dirección: {str(e)}')
+        else:
+            messages.warning(request, 'Todos los campos de dirección son obligatorios.')
+
+        return redirect('Ferremas:cuenta_cliente')
+
+    # --- CONTEXTO PARA EL TEMPLATE ---
+    direcciones = Direccion.objects.filter(id_usuario=usuario).select_related('id_comuna', 'id_region')
+    regiones = Region.objects.all()
+
     context = {
         'usuario': usuario,
+        'direcciones': direcciones,
+        'regiones': regiones,
+        'tipos_productos': TipoProducto.objects.all()
     }
     return render(request, 'web/cuenta_cliente.html', context)
+
+@rol_requerido(['Cliente'])
+@never_cache
+def gestionar_direccion(request, direccion_id=None):
+    if not request.session.get('usuario_id'):
+        return redirect('Ferremas:login')
+
+    usuario_id = request.session.get('usuario_id')
+    usuario = get_object_or_404(Usuario, id=usuario_id)
+    regiones = Region.objects.all()
+
+    if direccion_id:
+        direccion = get_object_or_404(Direccion, id=direccion_id, id_usuario=usuario)
+    else:
+        direccion = None
+
+    if request.method == 'POST':
+        calle = request.POST.get('calle')
+        num_calle = request.POST.get('num_calle')
+        id_region = request.POST.get('id_region')
+        id_comuna = request.POST.get('id_comuna')
+
+        if direccion:
+            direccion.calle = calle
+            direccion.num_calle = num_calle
+            direccion.id_region_id = id_region
+            direccion.id_comuna_id = id_comuna
+            direccion.save()
+            messages.success(request, "Dirección actualizada correctamente.")
+        else:
+            Direccion.objects.create(
+                calle=calle,
+                num_calle=num_calle,
+                id_region_id=id_region,
+                id_comuna_id=id_comuna,
+                id_usuario=usuario
+            )
+            messages.success(request, "Dirección agregada correctamente.")
+
+        return redirect('Ferremas:cuenta_cliente')
+
+    return render(request, 'web/gestionar_direccion.html', {
+        'direccion': direccion,
+        'regiones': regiones,
+        'tipos_productos': TipoProducto.objects.all()
+    })
+
+@require_POST
+@rol_requerido(['Cliente'])
+def eliminar_direccion(request, direccion_id):
+    usuario_id = request.session.get('usuario_id')
+    direccion = get_object_or_404(Direccion, id=direccion_id, id_usuario_id=usuario_id)
+    direccion.delete()
+    messages.success(request, "Dirección eliminada correctamente.")
+    return redirect('Ferremas:cuenta_cliente')
 
 def comprar(request):
     if 'usuario_id' not in request.session:
@@ -819,6 +923,8 @@ def gestion_pedidos(request):
 @rol_requerido(['Vendedor'])
 def productos_bodega(request):
     productos = Producto.objects.select_related('id_tipo_producto')
+    proveedores = Proveedor.objects.all()
+    tipos_producto = TipoProducto.objects.all()
 
     # === Filtros ===
     busqueda = request.GET.get('q')
@@ -839,6 +945,8 @@ def productos_bodega(request):
 
     context = {
         'productos': productos,
+        'proveedores': proveedores,
+        'tipos_producto': tipos_producto,
         'q': busqueda,
         'categoria': categoria,
         'bajo_stock': solo_bajo_stock,
@@ -985,7 +1093,7 @@ def confirmar_pago(request, pk):
 
 @rol_requerido(['Contador'])
 def registrar_entregas(request):
-    entregas = Entrega.objects.select_related('pedido__id_cliente').all()
+    entregas = Entrega.objects.select_related('pedido').all()
 
     # Filtros
     fecha_filtro = request.GET.get('fecha')
@@ -993,9 +1101,9 @@ def registrar_entregas(request):
     cliente_q = request.GET.get('cliente')
 
     if fecha_filtro == 'Hoy':
-        entregas = entregas.filter(fecha=date.today())
+        entregas = entregas.filter(fecha_entrega=date.today())
     elif fecha_filtro == 'Últimos 7 días':
-        entregas = entregas.filter(fecha__gte=date.today() - timedelta(days=7))
+        entregas = entregas.filter(fecha_entrega__gte=date.today() - timedelta(days=7))
 
     if estado_filtro and estado_filtro != 'Todos':
         entregas = entregas.filter(estado=estado_filtro)
@@ -1225,8 +1333,119 @@ def crear_usuario(request):
 
     return render(request, 'web/crear_usuario.html')
 
+def productos_por_categoria(request, tipo_id):
+    categoria = get_object_or_404(TipoProducto, id=tipo_id)
+    productos = Producto.objects.filter(id_tipo_producto=categoria)
 
+    cart = _get_or_create_cart(request)
+    cart_items_count = CarritoItem.objects.filter(id_carrito=cart).aggregate(Sum('cantidad'))['cantidad__sum'] or 0
 
+    tipos_productos = TipoProducto.objects.all()  # <- ESTO es lo que faltaba
 
+    return render(request, 'web/productos_categoria.html', {
+        'categoria': categoria,
+        'productos': productos,
+        'cart_items_count': cart_items_count,
+        'tipos_productos': tipos_productos  # <- ¡Inclúyelo aquí también!
+    })
 
+def productos_por_proveedor(request, proveedor_id):
+    proveedor = get_object_or_404(Proveedor, id=proveedor_id)
+    productos = Producto.objects.filter(id_proveedor=proveedor)
+    
+    cart_items_count = 0  # si ya usas _get_or_create_cart, inclúyelo
+    tipos_productos = TipoProducto.objects.all()
 
+    return render(request, 'web/productos_por_proveedor.html', {
+        'proveedor': proveedor,
+        'productos': productos,
+        'cart_items_count': cart_items_count,
+        'tipos_productos': tipos_productos,
+    })
+
+def aprobar_pedido(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    pedido.estado = 'Aprobado'
+    pedido.save()
+    return redirect('Ferremas:gestion_pedidos')
+
+def rechazar_pedido(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    pedido.estado = 'Rechazado'
+    pedido.save()
+    return redirect('Ferremas:gestion_pedidos')
+
+def reintentar_pedido(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    pedido.estado = 'Pendiente'
+    pedido.save()
+    return redirect('Ferremas:gestion_pedidos')
+
+def detalle_pedido(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    detalles = pedido.detallepedido_set.all()  # o como se llame tu relación
+    return render(request, 'web/detalle_pedido.html', {
+        'pedido': pedido,
+        'detalles': detalles,
+    })
+
+from django.shortcuts import get_object_or_404
+
+def detalle_pedido(request, pedido_id):
+    pedido = Pedido.objects.get(id=pedido_id)
+    detalles = DetallePedido.objects.filter(id_pedido=pedido)
+    
+    for d in detalles:
+        d.precio_unitario = d.subtotal / d.cantidad
+
+    return render(request, 'web/detalle_pedido.html', {
+        'pedido': pedido,
+        'detalles': detalles,
+    })
+
+class ProductoApiView(APIView):
+    def get(self, request):
+        productos = Producto.objects.all()
+        serializer = ProductoSerializer(productos, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ProductoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ProductoDetalleApiView(APIView):
+    def get_object(self, pk):
+        return Producto.objects.get(pk=pk)
+
+    def get(self, request, pk):
+        producto = self.get_object(pk)
+        serializer = ProductoSerializer(producto)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        producto = self.get_object(pk)
+        serializer = ProductoSerializer(producto, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        producto = self.get_object(pk)
+        producto.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class ProductoListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Producto.objects.all()
+    serializer_class = ProductoSerializer
+
+class ProductoRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Producto.objects.all()
+    serializer_class = ProductoSerializer
+
+def obtener_comunas_por_region(request, region_id):
+    comunas = Comuna.objects.filter(id_region_id=region_id).values('id', 'nombre')
+    return JsonResponse(list(comunas), safe=False)

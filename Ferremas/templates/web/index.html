@@ -79,62 +79,24 @@
     </div>
   </nav>
 
-  <!-- MENÚ LATERAL DE CATEGORÍAS -->
-  <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="offcanvasMenu">
-    <div class="offcanvas-header">
-      <h5 class="offcanvas-title">Categorías</h5>
-      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body">
-      <ul class="nav flex-column">
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-tools me-2"></i> Herramientas Manuales
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-lightning-charge-fill me-2"></i> Herramientas Eléctricas
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-nut me-2"></i> Tornillos y Fijaciones
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-box-seam me-2"></i> Accesorios y Repuestos
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-droplet-half me-2"></i> Gasfitería y Plomería
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-lightbulb-fill me-2"></i> Electricidad
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-bricks me-2"></i> Maderas y Construcción
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-paint-bucket me-2"></i> Pinturas y Adhesivos
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-shield-check me-2"></i> Limpieza y Seguridad
-          </a>
-        </li>
-      </ul>
-    </div>
+<!-- MENÚ LATERAL DE CATEGORÍAS -->
+<div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="offcanvasMenu">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">Categorías</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
   </div>
+  <div class="offcanvas-body">
+    <ul class="nav flex-column">
+      {% for tipo in tipos_productos %}
+        <li class="nav-item">
+          <a class="nav-link text-white" href="{% url 'Ferremas:productos_por_categoria' tipo.id %}">
+            <i class="bi bi-chevron-right me-2"></i> {{ tipo.nombre }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
 
   <!-- CARRITO -->
   <div class="offcanvas offcanvas-end" id="offcanvasCarrito">
@@ -157,14 +119,26 @@
   <!-- CARRUSEL -->
   <div id="carouselFerremas" class="carousel slide mt-3" data-bs-ride="carousel">
     <div class="carousel-inner">
+
+      <!-- Proveedor Einhell -->
       <div class="carousel-item active">
-        <img src="{% static 'img/banner1.png' %}" class="d-block w-100" alt="Banner 1">
+        <a href="{% url 'Ferremas:productos_por_proveedor' einhell_id %}">
+          <img src="{% static 'img/banner1.png' %}" class="d-block w-100" alt="Productos Einhell">
+        </a>
       </div>
+
+      <!-- Materiales de construcción -->
       <div class="carousel-item">
-        <img src="{% static 'img/banner2.png' %}" class="d-block w-100" alt="Banner 2">
+        <a href="{% url 'Ferremas:productos_por_categoria' categoria_construccion.id %}">
+          <img src="{% static 'img/banner2.png' %}" class="d-block w-100" alt="Materiales de construcción">
+        </a>
       </div>
+
+      <!-- Pintura y Adhesivos -->
       <div class="carousel-item">
-        <img src="{% static 'img/banner3.png' %}" class="d-block w-100" alt="Banner 3">
+        <a href="{% url 'Ferremas:productos_por_categoria' categoria_pintura.id  %}">
+          <img src="{% static 'img/banner3.png' %}" class="d-block w-100" alt="Pintura y Adhesivos">
+        </a>
       </div>
     </div>
     <button class="carousel-control-prev" type="button" data-bs-target="#carouselFerremas" data-bs-slide="prev">
@@ -173,6 +147,7 @@
     <button class="carousel-control-next" type="button" data-bs-target="#carouselFerremas" data-bs-slide="next">
       <span class="carousel-control-next-icon"></span>
     </button>
+  </div>
   </div>
 
   <!-- PRODUCTOS -->

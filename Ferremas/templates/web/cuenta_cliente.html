@@ -8,7 +8,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
-  <!-- Variables globales para el carrito -->
+
   <script>
     const URL_AGREGAR_CARRITO = "{% url 'Ferremas:agregar_al_carrito_api' %}";
     const URL_VER_CARRITO = "{% url 'Ferremas:ver_carrito_api' %}";
@@ -20,7 +20,6 @@
 </head>
 
 <body class="d-flex flex-column min-vh-100" style="background-color: #f8f9fa;">
-
   <!-- NAVBAR -->
   <nav class="navbar navbar-expand-lg" style="background-color: #005eff;">
     <div class="container-fluid d-flex flex-wrap justify-content-between align-items-center py-2 px-4">
@@ -28,45 +27,29 @@
         <a href="{% url 'Ferremas:index' %}" class="navbar-brand">
           <img src="{% static 'img/LOGO_FERREMAS.png' %}" alt="FERREMAS" height="40">
         </a>
-        <button class="btn btn-light fw-bold px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenu">
-          CATEGORÍAS
-        </button>
+        <button class="btn btn-light fw-bold px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenu">CATEGORÍAS</button>
       </div>
-
       <form class="d-none d-lg-block flex-grow-1 mx-4">
         <input type="text" class="form-control" placeholder="¿Qué quieres buscar hoy?">
       </form>
-
       <div class="d-flex align-items-center gap-2">
         {% if request.session.usuario_id %}
-          <span class="text-white me-2">
-            <i class="bi bi-person-circle"></i> {{ request.session.usuario_nombre }}
-          </span>
-          <a href="{% url 'Ferremas:cuenta_cliente' %}" class="btn btn-outline-light btn-sm">
-            Mi Cuenta
-          </a>
-          <a href="{% url 'Ferremas:logout' %}" class="btn btn-danger btn-sm">
-            <i class="bi bi-box-arrow-right"></i> Logout
-          </a>
+          <span class="text-white me-2"><i class="bi bi-person-circle"></i> {{ request.session.usuario_nombre }}</span>
+          <a href="{% url 'Ferremas:cuenta_cliente' %}" class="btn btn-outline-light btn-sm">Mi Cuenta</a>
+          <a href="{% url 'Ferremas:logout' %}" class="btn btn-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Logout</a>
         {% else %}
-          <a href="{% url 'Ferremas:login' %}" class="btn btn-naranja btn-sm">
-            <i class="bi bi-box-arrow-in-right"></i> Ingresar
-          </a>
-          <a href="{% url 'Ferremas:registro' %}" class="btn btn-naranja btn-sm">
-            <i class="bi bi-person-fill"></i> Registrarse
-          </a>
+          <a href="{% url 'Ferremas:login' %}" class="btn btn-naranja btn-sm"><i class="bi bi-box-arrow-in-right"></i> Ingresar</a>
+          <a href="{% url 'Ferremas:registro' %}" class="btn btn-naranja btn-sm"><i class="bi bi-person-fill"></i> Registrarse</a>
         {% endif %}
         <a class="btn btn-naranja btn-sm position-relative" data-bs-toggle="offcanvas" href="#offcanvasCarrito">
           <i class="bi bi-cart-fill"></i>
-          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-total-badge">
-            {{ cart_items_count|default:"0" }}
-          </span>
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-total-badge">{{ cart_items_count|default:"0" }}</span>
         </a>
       </div>
     </div>
   </nav>
 
-  <!-- MENÚ LATERAL DE CATEGORÍAS -->
+  <!-- MENÚ LATERAL -->
   <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="offcanvasMenu">
     <div class="offcanvas-header">
       <h5 class="offcanvas-title">Categorías</h5>
@@ -74,51 +57,11 @@
     </div>
     <div class="offcanvas-body">
       <ul class="nav flex-column">
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-tools me-2"></i> Herramientas Manuales
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-lightning-charge-fill me-2"></i> Herramientas Eléctricas
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-nut me-2"></i> Tornillos y Fijaciones
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-box-seam me-2"></i> Accesorios y Repuestos
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-droplet-half me-2"></i> Gasfitería y Plomería
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-lightbulb-fill me-2"></i> Electricidad
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-bricks me-2"></i> Maderas y Construcción
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-paint-bucket me-2"></i> Pinturas y Adhesivos
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="#">
-            <i class="bi bi-shield-check me-2"></i> Limpieza y Seguridad
-          </a>
-        </li>
+        {% for tipo in tipos_productos %}
+          <li class="nav-item">
+            <a class="nav-link text-white" href="{% url 'Ferremas:productos_por_categoria' tipo.id %}"><i class="bi bi-chevron-right me-2"></i> {{ tipo.nombre }}</a>
+          </li>
+        {% endfor %}
       </ul>
     </div>
   </div>
@@ -130,9 +73,7 @@
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body d-flex flex-column justify-content-between">
-      <div id="cart-items-container">
-        <p id="cart-empty-message">Tu carrito está vacío.</p>
-      </div>
+      <div id="cart-items-container"><p id="cart-empty-message">Tu carrito está vacío.</p></div>
       <div>
         <div class="d-flex justify-content-between mb-2"><strong>SUBTOTAL</strong><span id="cart-subtotal">$0</span></div>
         <div class="d-flex justify-content-between mb-3"><strong>TOTAL</strong><span id="cart-grand-total">$0</span></div>
@@ -141,101 +82,137 @@
     </div>
   </div>
 
- {% if messages %}
-  <div id="mensajes">
-    <ul class="list-unstyled">
-      {% for message in messages %}
-        <li data-tag="{{ message.tags }}" class="alert alert-{{ message.tags }}" style="position: relative;">
-          {{ message }}
-          <button type="button" onclick="this.parentElement.style.display='none';" 
-            style="position: absolute; top: 5px; right: 10px; background: none; border: none; font-size: 16px; cursor: pointer; color: inherit;">
-            ×
-          </button>
-        </li>
-      {% endfor %}
-    </ul>
-  </div>
-{% endif %}
+  {% if messages %}
+    <div id="mensajes">
+      <ul class="list-unstyled">
+        {% for message in messages %}
+          <li data-tag="{{ message.tags }}" class="alert alert-{{ message.tags }}">
+            {{ message }}
+            <button type="button" onclick="this.parentElement.style.display='none';" style="position: absolute; top: 5px; right: 10px; background: none; border: none; font-size: 16px; cursor: pointer; color: inherit;">×</button>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
 
-  <div class="container my-5">
-    <h3 class="mb-4 text-center">Información de la cuenta</h3>
-    <div class="row mb-5">
-      <div class="col-md-6">
-        <h5>Información del contacto</h5>
-        <form id="form-info" method="POST" action="">
-          {% csrf_token %}
-
-          <p>RUT: <span>{{ usuario.rut }}</span></p>
-          <p>Nombre: <span>{{ usuario.nombre }}</span></p>
-          <p>Apellidos: <span>{{ usuario.apellido }}</span></p>
-          
-          <p>
-            Correo: 
-            <span id="texto-correo">{{ usuario.email }}</span>
-            <input type="email" id="campo-correo" name="email" value="{{ usuario.email }}" 
-                  class="form-control d-none" style="width: auto;" />
-          </p>
-
-          <div id="cambio-contrasena" class="mt-3 d-none">
-          <input type="hidden" name="accion" value="cambiar_contrasena" />
-
-            <div class="mb-2">
-              <label for="nueva_contrasena">Nueva contraseña:</label>
-              <input type="password" class="form-control"  id="nueva_contrasena" name="nueva_contrasena" required />
+  <main class="flex-grow-1">
+    <div class="container my-5">
+      <h3 class="mb-4 text-center">Información de la cuenta</h3>
+      <div class="row mb-5">
+        <div class="col-md-6">
+          <h5>Información del contacto</h5>
+          <form id="form-info" method="POST" action="">
+            {% csrf_token %}
+            <p>RUT: <span>{{ usuario.rut }}</span></p>
+            <p>Nombre: <span>{{ usuario.nombre }}</span></p>
+            <p>Apellidos: <span>{{ usuario.apellido }}</span></p>
+            <p>
+              Correo:
+              <span id="texto-correo">{{ usuario.email }}</span>
+              <input type="email" id="campo-correo" name="email" value="{{ usuario.email }}" class="form-control d-none" style="width: auto;" />
+            </p>
+            <div id="cambio-contrasena" class="mt-3 d-none">
+              <input type="hidden" name="accion" value="cambiar_contrasena" />
+              <div class="mb-2">
+                <label for="nueva_contrasena">Nueva contraseña:</label>
+                <input type="password" class="form-control" id="nueva_contrasena" name="nueva_contrasena" required />
+              </div>
+              <div class="mb-2">
+                <label for="confirmar_contrasena">Confirmar nueva contraseña:</label>
+                <input type="password" class="form-control" id="confirmar_contrasena" name="confirmar_contrasena" required />
+              </div>
+              <div class="form-check mt-2 mb-3">
+                <input type="checkbox" class="form-check-input" id="togglePassword">
+                <label class="form-check-label" for="togglePassword">Mostrar contraseñas</label>
+              </div>
+              <button type="submit" class="btn btn-dark btn-sm">Guardar contraseña</button>
+              <button type="button" id="btn-cerrar-contrasena" class="btn btn-outline-secondary btn-sm ms-2">Cerrar</button>
             </div>
-
-            <div class="mb-2">
-              <label for="confirmar_contrasena">Confirmar nueva contraseña:</label>
-              <input type="password" class="form-control" id="confirmar_contrasena" name="confirmar_contrasena" required />
+            <div class="d-flex gap-2 mt-2">
+              <button type="button" id="btn-editar-correo" class="btn btn-outline-dark btn-sm">Editar correo</button>
+              <button class="btn btn-outline-dark btn-sm" type="button" id="btn-mostrar-form-contrasena">Cambiar contraseña</button>
             </div>
-            <div class="form-check mt-2 mb-3">
-              <input type="checkbox" class="form-check-input" id="togglePassword">
-              <label class="form-check-label" for="togglePassword">Mostrar contraseñas</label>
-            </div>
-
-            <button type="submit" class="btn btn-dark btn-sm">Guardar contraseña</button>
-            <button type="button" id="btn-cerrar-contrasena" class="btn btn-outline-secondary btn-sm ms-2">Cerrar</button>
-          </div>
-
-          <div class="d-flex gap-2 mt-2">
-            <button type="button" id="btn-editar-correo" class="btn btn-outline-dark btn-sm">Editar correo</button>
-            <button class="btn btn-outline-dark btn-sm" type="button" id="btn-mostrar-form-contrasena">Cambiar contraseña</button>
-          </div>
             <button type="submit" id="btn-guardar-correo" class="btn btn-dark btn-sm mt-2 d-none">Guardar correo</button>
             <button type="button" id="btn-cerrar-correo" class="btn btn-outline-secondary btn-sm mt-2 d-none">Cerrar</button>
-        </form>
+          </form>
+        </div>
+        <div class="col-md-6">
+          <h5>Boletín Informativo</h5>
+          <p>{% if usuario.boletin %}Suscrito al boletín{% else %}No suscrito al boletín{% endif %}</p>
+          <form method="POST" style="display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="boletin">
+            <button type="submit" class="btn btn-outline-dark btn-sm">
+              {% if usuario.boletin %}Cancelar suscripción{% else %}Suscribirse{% endif %}
+            </button>
+          </form>
+        </div>
       </div>
-      <div class="col-md-6">
-        <h5>Boletín Informativo</h5>
-        <p>{% if usuario.boletin %}Suscrito al boletín{% else %}No suscrito al boletín{% endif %}</p>
-        <a href="#" class="btn btn-outline-dark btn-sm">Editar</a>
+
+      <h4 class="mb-3">Libreta de direcciones <small class="text-muted">Gestionar direcciones</small></h4>
+      <div class="row">
+        {% if direcciones %}
+          {% for dir in direcciones %}
+            <div class="col-md-6 mb-3">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                  <h6 class="card-title mb-2">
+                    <i class="bi bi-geo-alt-fill text-primary me-1"></i>
+                    {{ dir.calle }} {{ dir.num_calle }}
+                  </h6>
+                  <p class="card-text mb-1">
+                    <i class="bi bi-building text-secondary me-1"></i>
+                    <strong>Comuna:</strong> {{ dir.id_comuna.nombre }}
+                  </p>
+                  <p class="card-text">
+                    <i class="bi bi-map text-secondary me-1"></i>
+                    <strong>Región:</strong> {{ dir.id_region.nombre }}
+                  </p>
+                  <div class="d-flex justify-content-end mt-3">
+                    <a href="{% url 'Ferremas:editar_direccion' direccion_id=dir.id %}" class="btn btn-outline-primary btn-sm me-2">
+                      <i class="bi bi-pencil-square"></i> Editar
+                    </a>
+                    <form action="{% url 'Ferremas:eliminar_direccion' direccion_id=dir.id %}" method="post" class="d-inline"
+                          onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta dirección?');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash"></i> Eliminar
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p>No ha establecido direcciones.</p>
+        {% endif %}
+        <div class="col-12 mt-3">
+          <a href="{% url 'Ferremas:gestionar_direccion' %}" 
+            class="btn btn-outline-dark btn-sm"
+            data-bs-toggle="tooltip" 
+            data-bs-placement="top" 
+            title="Agrega una nueva dirección para tus compras">
+            <i class="bi bi-plus-circle me-1"></i> Agregar otra dirección
+          </a>
+        </div>
       </div>
     </div>
+  </main>
 
-    <h4 class="mb-3">Libreta de direcciones <small class="text-muted">Gestionar direcciones</small></h4>
-    <div class="row">
-      <div class="col-md-6">
-        <h6>Dirección de facturación por defecto</h6>
-        <p>No ha establecido una dirección de facturación predeterminada.</p>
-        <a href="#" class="btn btn-outline-dark btn-sm">Editar Dirección</a>
-      </div>
-      <div class="col-md-6">
-        <h6>Dirección de envío predeterminada</h6>
-        <p>No ha establecido una dirección de envío predeterminada.</p>
-        <a href="#" class="btn btn-outline-dark btn-sm">Editar Dirección</a>
-      </div>
-    </div>
-  </div>
-
-  <footer class="text-white text-center py-3 mt-auto">
+  <footer class="text-white text-center py-3" style="background-color: #005eff;">
     <div class="container">
       <p class="mb-1">&copy; 2025 FERREMAS. Todos los derechos reservados.</p>
       <small>Contáctanos: contacto@ferremas.cl | +56 9 1234 5678</small>
     </div>
   </footer>
 
+  <script>
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(t => new bootstrap.Tooltip(t));
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  {# Si necesitas funcionalidad de carrito aquí, enlaza carrito.js y define las URLs de Django en <head> #}
   <script src="{% static 'js/cuenta_cliente.js' %}"></script>
 </body>
 </html>

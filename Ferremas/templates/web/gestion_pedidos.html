@@ -44,6 +44,7 @@
           <option value="Pendiente" {% if request.GET.estado == "Pendiente" %}selected{% endif %}>Pendiente</option>
           <option value="Aprobado" {% if request.GET.estado == "Aprobado" %}selected{% endif %}>Aprobado</option>
           <option value="Rechazado" {% if request.GET.estado == "Rechazado" %}selected{% endif %}>Rechazado</option>
+          <option value="Pagado" {% if request.GET.estado == "Pagado" %}selected{% endif %}>Pagado</option>
         </select>
       </div>
 
@@ -94,22 +95,39 @@
                   <span class="badge bg-success">Aprobado</span>
                 {% elif pedido.estado == 'Rechazado' %}
                   <span class="badge bg-danger">Rechazado</span>
+                {% elif pedido.estado == 'Pagado' %}
+                  <span class="badge bg-secondary">Pagado</span>
                 {% else %}
-                  <span class="badge bg-secondary">{{ pedido.estado }}</span>
+                  <span class="badge bg-dark">{{ pedido.estado }}</span>
                 {% endif %}
               </td>
               <td class="d-flex gap-2">
                 {% if pedido.estado == 'Pendiente' %}
-                  <a href="#" class="btn btn-outline-dark btn-sm">
+                  <form action="{% url 'Ferremas:aprobar_pedido' pedido.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm text-success" title="Aprobar">
+                      <i class="bi bi-check-circle-fill"></i>
+                    </button>
+                  </form>
+                  <form action="{% url 'Ferremas:rechazar_pedido' pedido.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm text-danger" title="Rechazar">
+                      <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                  </form>
+                {% elif pedido.estado == 'Aprobado' or pedido.estado == 'Pagado' %}
+                  <a href="{% url 'Ferremas:detalle_pedido' pedido.id %}" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-eye-fill"></i> Ver Detalle
                   </a>
-                {% elif pedido.estado == 'Aprobado' %}
-                  <button class="btn btn-sm text-success"><i class="bi bi-hand-thumbs-up-fill"></i></button>
-                  <button class="btn btn-sm text-danger"><i class="bi bi-x-circle-fill"></i></button>
                 {% elif pedido.estado == 'Rechazado' %}
-                  <button class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-repeat"></i> Reintentar
-                  </button>
+                  <form action="{% url 'Ferremas:reintentar_pedido' pedido.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm" title="Reintentar">
+                      <i class="bi bi-arrow-repeat"></i> Reintentar
+                    </button>
+                  </form>
+                {% else %}
+                  <span class="text-muted">Sin acciones</span>
                 {% endif %}
               </td>
             </tr>
