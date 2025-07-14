@@ -3,6 +3,8 @@ import os
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+from dotenv import load_dotenv
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -113,9 +115,9 @@ CLOUDINARY_STORAGE = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'Ferremas/static'),
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'Ferremas/static'),
+# ]
 
 # Para producción (Render)
 if not DEBUG:

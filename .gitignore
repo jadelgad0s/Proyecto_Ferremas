@@ -1,4 +1,39 @@
-# .gitignore
-__pycache__/
+# Entorno virtual
+env/
+venv/
+ENV/
+
+# Archivos de entorno
+.env
+
+# Archivos temporales
+*.log
+*.pot
 *.pyc
-media/
+__pycache__/
+*.sqlite3
+
+# Archivos de compilación
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+develop-eggs/
+.eggs/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Django
+db.sqlite3
+staticfiles/
+
+# Archivos de VSCode
+.vscode/
+
+# Archivos de test
+.coverage
+htmlcov/
+.tox/

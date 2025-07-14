@@ -11,8 +11,10 @@ charset-normalizer==3.4.2
 cloudinary==1.44.0
 colorama==0.4.6
 deprecation==2.1.0
+dj-database-url==3.0.1
 Django==5.2.1
 django-cloudinary-storage==0.3.0
+django-heroku==0.3.1
 djangorestframework==3.16.0
 frozenlist==1.6.0
 gotrue==2.12.0
@@ -32,6 +34,7 @@ pillow==11.2.1
 pluggy==1.6.0
 postgrest==1.0.2
 propcache==0.3.1
+psycopg2==2.9.10
 psycopg2-binary==2.9.10
 py==1.11.0
 pycparser==2.22
