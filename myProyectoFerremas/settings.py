@@ -112,3 +112,16 @@ CLOUDINARY_STORAGE = {
 #DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'Ferremas/static'),
+]
+
+# Para producción (Render)
+if not DEBUG:
+    import django_heroku
+    django_heroku.settings(locals())
+

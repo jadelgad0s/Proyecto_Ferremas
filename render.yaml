@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: Proyecto_Ferremas
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn myProyectoFerremas.wsgi:application"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: myProyectoFerremas.settings
