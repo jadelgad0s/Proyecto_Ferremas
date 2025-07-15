@@ -1,120 +1,125 @@
-// Ferremas/static/Ferremas/js/comprar.js
-
-// Función para validar RUT Chileno (algoritmo Módulo 11)
+// --- Función para validar RUT chileno ---
 function validarRutChileno(rutCompleto) {
   if (!rutCompleto) return false;
   rutCompleto = rutCompleto.replace(/\./g, '').replace('-', '');
-  if (!/^[0-9]+[0-9kK]{1}$/.test(rutCompleto)) {
-    return false;
-  }
-  var tmp = rutCompleto.slice(0, -1);
-  var digv = rutCompleto.slice(-1).toLowerCase();
-  var rut = parseInt(tmp);
+  if (!/^[0-9]+[0-9kK]{1}$/.test(rutCompleto)) return false;
 
-  if (isNaN(rut)) return false;
+  let cuerpo = rutCompleto.slice(0, -1);
+  let dv = rutCompleto.slice(-1).toLowerCase();
+  let suma = 0, multiplo = 2;
 
-  var M = 0, S = 1;
-  for (; rut; rut = Math.floor(rut / 10)) {
-    S = (S + rut % 10 * (9 - M++ % 6)) % 11;
+  for (let i = cuerpo.length - 1; i >= 0; i--) {
+    suma += parseInt(cuerpo.charAt(i)) * multiplo;
+    multiplo = multiplo < 7 ? multiplo + 1 : 2;
   }
-  var dvCalculado = S ? (S - 1).toString() : 'k';
-  return (dvCalculado === digv);
+
+  let dvEsperado = 11 - (suma % 11);
+  dvEsperado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'k' : dvEsperado.toString();
+
+  return dv === dvEsperado;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  const form = document.querySelector('form[action*="comprar"]'); 
-  const rutInput = form ? form.querySelector('input[name="rut"]') : null; 
-  
-  const radioDomicilio = document.getElementById('domicilio');
-  const radioRetiro = document.getElementById('retiro');
-  const sucursalSelect = form ? form.querySelector('select[name="sucursal"]') : null;
-  
-  const shippingCostSummaryElement = document.getElementById('shipping-cost-summary');
-  const grandTotalSummaryElement = document.getElementById('grand-total-summary');
-  
-  // 'initialProductsTotalFromDjango' DEBE estar definida en un <script> en el HTML ANTES de este script.
-  const initialProductsTotal = (typeof initialProductsTotalFromDjango !== 'undefined' && !isNaN(initialProductsTotalFromDjango)) 
-                               ? initialProductsTotalFromDjango 
-                               : 0;
-  // console.log("Initial Products Total en JS (comprar.js):", initialProductsTotal);
+// --- Función para actualizar costo de envío y total ---
+function actualizarResumenPedido() {
+  const form = document.getElementById("form-compra");
+  const shippingCostElement = document.getElementById("shipping-cost-summary");
+  const grandTotalElement = document.getElementById("grand-total-summary");
 
+  const retiro = document.getElementById("retiro");
+  const domicilio = document.getElementById("domicilio");
+  const sucursalSelect = form.querySelector("select[name='sucursal']");
   const costoEnvioFijo = 8000;
 
-  function actualizarResumenPedido() {
-    if (!form) return; 
-    let costoEnvioActual = 0;
-    
-    if (radioDomicilio && radioDomicilio.checked) {
-        costoEnvioActual = costoEnvioFijo;
-    }
-    // console.log("Costo de envío seleccionado (comprar.js):", costoEnvioActual);
+  let costoEnvio = domicilio && domicilio.checked ? costoEnvioFijo : 0;
+  let total = (typeof initialProductsTotalFromDjango !== 'undefined' ? initialProductsTotalFromDjango : 0) + costoEnvio;
 
-    if (shippingCostSummaryElement) {
-        shippingCostSummaryElement.textContent = `$${costoEnvioActual.toLocaleString('es-CL')}`;
-    }
-    
-    if (grandTotalSummaryElement) {
-        let granTotal = initialProductsTotal + costoEnvioActual;
-        // console.log("Calculando Gran Total (comprar.js):", initialProductsTotal, "+", costoEnvioActual, "=", granTotal);
-        grandTotalSummaryElement.textContent = `$${granTotal.toLocaleString('es-CL', {maximumFractionDigits: 0, minimumFractionDigits: 0})}`;
-    }
-
-    let hiddenShippingCostInput = form.querySelector('input[name="costo_envio"]');
-    if (!hiddenShippingCostInput) {
-        hiddenShippingCostInput = document.createElement('input');
-        hiddenShippingCostInput.type = 'hidden';
-        hiddenShippingCostInput.name = 'costo_envio';
-        form.appendChild(hiddenShippingCostInput);
-    }
-    hiddenShippingCostInput.value = costoEnvioActual;
+  if (shippingCostElement) {
+    shippingCostElement.textContent = `$${costoEnvio.toLocaleString('es-CL')}`;
+  }
+  if (grandTotalElement) {
+    grandTotalElement.textContent = `$${total.toLocaleString('es-CL', { minimumFractionDigits: 0 })}`;
   }
 
-  if (radioDomicilio) {
-    radioDomicilio.addEventListener('change', function() {
-      if (this.checked && sucursalSelect) {
-        sucursalSelect.disabled = true; 
-        sucursalSelect.value = ""; 
-      }
-      actualizarResumenPedido();
-    });
+  // Campo oculto para el costo de envío
+  let hiddenInput = form.querySelector("input[name='costo_envio']");
+  if (!hiddenInput) {
+    hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'costo_envio';
+    form.appendChild(hiddenInput);
   }
+  hiddenInput.value = costoEnvio;
 
-  if (radioRetiro) {
-    radioRetiro.addEventListener('change', function() {
-      if (this.checked && sucursalSelect) {
-        sucursalSelect.disabled = false; 
-      }
-      actualizarResumenPedido();
-    });
-  }
-  
-  if (form) { 
-    if (sucursalSelect && radioDomicilio && radioRetiro) {
-        if (radioDomicilio.checked) {
-            sucursalSelect.disabled = true;
-        } else if (radioRetiro.checked) { 
-            sucursalSelect.disabled = false;
-        } else if (radioRetiro) { 
-            radioRetiro.checked = true; 
-            if(sucursalSelect) sucursalSelect.disabled = false;
-        } else if (radioDomicilio && sucursalSelect) { // Fallback
-             sucursalSelect.disabled = true;
-        }
+  // Habilitar / deshabilitar selector de sucursal
+  if (sucursalSelect) {
+    sucursalSelect.disabled = domicilio && domicilio.checked;
+    if (domicilio && domicilio.checked) {
+      sucursalSelect.value = "";
     }
-    actualizarResumenPedido(); 
+  }
+}
 
-    if (rutInput) {
-      form.addEventListener('submit', function(event) {
-        actualizarResumenPedido(); 
+// --- Cargar comunas dinámicamente ---
+function cargarComunasPorRegion(regionSelectId, comunaSelectId) {
+  const regionSelect = document.getElementById(regionSelectId);
+  const comunaSelect = document.getElementById(comunaSelectId);
 
-        let rutValido = validarRutChileno(rutInput.value);
-        if (!rutValido) {
-          alert('El RUT ingresado no es válido. Formato ejemplo: 12345678-9 (puede incluir puntos y guion).');
-          rutInput.focus(); 
-          event.preventDefault(); 
-          return false;
-        }
+  if (!regionSelect || !comunaSelect) return;
+
+  regionSelect.addEventListener("change", async () => {
+    const regionId = regionSelect.value;
+    comunaSelect.innerHTML = '<option value="">Cargando comunas...</option>';
+
+    if (!regionId) return;
+
+    try {
+      const response = await fetch(`/api/comunas/${regionId}/`);
+      if (!response.ok) throw new Error("No se pudo cargar comunas");
+
+      const comunas = await response.json();
+      comunaSelect.innerHTML = '<option value="">Seleccione comuna</option>';
+      comunas.forEach(comuna => {
+        const option = document.createElement("option");
+        option.value = comuna.id;
+        option.textContent = comuna.nombre;
+        comunaSelect.appendChild(option);
       });
+    } catch (error) {
+      comunaSelect.innerHTML = '<option value="">Error al cargar comunas</option>';
+      console.error(error);
     }
+  });
+
+  // Si hay una región preseleccionada, dispara evento para cargar comunas al editar
+  if (regionSelect.value) {
+    regionSelect.dispatchEvent(new Event("change"));
   }
+}
+
+// --- Inicio ---
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("form-compra");
+  const rutInput = form ? form.querySelector("input[name='rut']") : null;
+
+  actualizarResumenPedido();
+  cargarComunasPorRegion("region", "comuna");
+
+  // Validación de RUT en envío de formulario
+  if (rutInput && form) {
+    form.addEventListener("submit", (e) => {
+      const rutValido = validarRutChileno(rutInput.value);
+      if (!rutValido) {
+        e.preventDefault();
+        alert("El RUT ingresado no es válido. Formato ejemplo: 12345678-9");
+        rutInput.focus();
+      }
+    });
+  }
+
+  // Listeners para cambiar método de envío
+  const domicilio = document.getElementById("domicilio");
+  const retiro = document.getElementById("retiro");
+
+  if (domicilio) domicilio.addEventListener("change", actualizarResumenPedido);
+  if (retiro) retiro.addEventListener("change", actualizarResumenPedido);
 });

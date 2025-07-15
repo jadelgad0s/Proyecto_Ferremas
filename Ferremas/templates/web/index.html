@@ -120,26 +120,30 @@
   <div id="carouselFerremas" class="carousel slide mt-3" data-bs-ride="carousel">
     <div class="carousel-inner">
 
-      <!-- Proveedor Einhell -->
+      {% if einhell_id %}
       <div class="carousel-item active">
         <a href="{% url 'Ferremas:productos_por_proveedor' einhell_id %}">
           <img src="{% static 'img/banner1.png' %}" class="d-block w-100" alt="Productos Einhell">
         </a>
       </div>
+      {% endif %}
 
-      <!-- Materiales de construcción -->
-      <div class="carousel-item">
+      {% if categoria_construccion %}
+      <div class="carousel-item {% if not einhell_id %}active{% endif %}">
         <a href="{% url 'Ferremas:productos_por_categoria' categoria_construccion.id %}">
           <img src="{% static 'img/banner2.png' %}" class="d-block w-100" alt="Materiales de construcción">
         </a>
       </div>
+      {% endif %}
 
-      <!-- Pintura y Adhesivos -->
-      <div class="carousel-item">
-        <a href="{% url 'Ferremas:productos_por_categoria' categoria_pintura.id  %}">
+      {% if categoria_pintura %}
+      <div class="carousel-item {% if not einhell_id and not categoria_construccion %}active{% endif %}">
+        <a href="{% url 'Ferremas:productos_por_categoria' categoria_pintura.id %}">
           <img src="{% static 'img/banner3.png' %}" class="d-block w-100" alt="Pintura y Adhesivos">
         </a>
       </div>
+      {% endif %}
+
     </div>
     <button class="carousel-control-prev" type="button" data-bs-target="#carouselFerremas" data-bs-slide="prev">
       <span class="carousel-control-prev-icon"></span>
@@ -148,7 +152,7 @@
       <span class="carousel-control-next-icon"></span>
     </button>
   </div>
-  </div>
+
 
   <!-- PRODUCTOS -->
   <div class="container my-5">

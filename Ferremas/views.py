@@ -274,19 +274,19 @@ def index(request):
     productos_destacados = Producto.objects.all().order_by('-id')[:6]
     tipos_productos = TipoProducto.objects.all()
 
-    # Obtener proveedor Einhell
-    einhell = Proveedor.objects.get(nombre__icontains='einhell')
+    # Cambiado: ahora no lanzará error si no existe Einhell
+    einhell = Proveedor.objects.filter(nombre__icontains='einhell').first()
 
-    # Obtener categorías específicas para el carrusel
-    categoria_herramientas = TipoProducto.objects.get(nombre__icontains="herramienta")
-    categoria_pintura = TipoProducto.objects.get(nombre__icontains="pintura")
-    categoria_construccion = TipoProducto.objects.get(nombre__icontains="construcción")
+    # Estas también las deberías proteger por si no existen
+    categoria_herramientas = TipoProducto.objects.filter(nombre__icontains="herramienta").first()
+    categoria_pintura = TipoProducto.objects.filter(nombre__icontains="pintura").first()
+    categoria_construccion = TipoProducto.objects.filter(nombre__icontains="construcción").first()
 
     return render(request, 'web/index.html', {
         'cart_items_count': cart_items_count,
         'productos': productos_destacados,
         'tipos_productos': tipos_productos,
-        'einhell_id': einhell.id,
+        'einhell_id': einhell.id if einhell else None,
         'categoria_herramientas': categoria_herramientas,
         'categoria_pintura': categoria_pintura,
         'categoria_construccion': categoria_construccion,
@@ -449,23 +449,24 @@ def ver_carrito_api(request):
     total_items_count = 0
 
     if cart:
-        cart_items = CarritoItem.objects.filter(id_carrito=cart).select_related('id_producto') #
+        cart_items = CarritoItem.objects.filter(id_carrito=cart).select_related('id_producto')
         for item in cart_items:
+            producto = item.id_producto
             items_data.append({
-                'id': str(item.id), #
-                'product_id': str(item.id_producto.id), #
-                'nombre': item.id_producto.nombre, #
-                'precio': float(item.id_producto.precio), #
-                'cantidad': item.cantidad, #
-                'subtotal': float(item.subtotal_calculado), 
-                'imagen_url': None, 
-                'stock_producto': item.id_producto.stock #
+                'id': str(item.id),
+                'product_id': str(producto.id),
+                'nombre': producto.nombre,
+                'precio': float(producto.precio),
+                'cantidad': item.cantidad,
+                'subtotal': float(item.subtotal_calculado),
+                'imagen_url': producto.imagen.url if producto.imagen else None,
+                'stock_producto': producto.stock
             })
         total_items_count = sum(i['cantidad'] for i in items_data)
-        cart_total_value_decimal = cart.total_calculado #
+        cart_total_value_decimal = cart.total_calculado
 
     return JsonResponse({
-        'items': items_data,
+        'items': items_data,    
         'total_items_count': total_items_count,
         'cart_total_value': float(cart_total_value_decimal)
     })
@@ -735,9 +736,6 @@ def eliminar_direccion(request, direccion_id):
     return redirect('Ferremas:cuenta_cliente')
 
 def comprar(request):
-    if 'usuario_id' not in request.session:
-        return redirect('Ferremas:login')
-
     print("DEBUG comprar: Vista 'comprar' iniciada.")
     cart = _get_or_create_cart(request)
 
@@ -747,27 +745,6 @@ def comprar(request):
         return redirect('Ferremas:productos')
 
     print(f"DEBUG comprar: Carrito ID: {cart.id}, Cliente ID del Carrito: {cart.id_cliente}, Session Key del Carrito: {cart.session_key}")
-
-    # Asegura que el carrito esté vinculado al usuario logueado
-    if not cart.id_cliente:
-        if 'usuario_id' in request.session:
-            try:
-                cliente_actual = Usuario.objects.get(id=request.session['usuario_id'])
-                cart.id_cliente = cliente_actual
-                cart.session_key = None # Limpia la session_key al asociar al usuario
-                cart.save()
-                print(f"DEBUG comprar: Carrito {cart.id} asociado forzosamente al cliente {cliente_actual.id}.")
-            except Usuario.DoesNotExist:
-                print(f"ERROR comprar: usuario_id {request.session['usuario_id']} inválido.")
-                return redirect('Ferremas:login')
-        else:
-            print("ERROR comprar: request.user autenticado pero no hay 'usuario_id' en sesión.")
-            return redirect('Ferremas:login')
-
-    cliente_para_pedido = cart.id_cliente
-    if not cliente_para_pedido:
-        messages.error(request, "No se pudo identificar al cliente.")
-        return redirect('Ferremas:login')
 
     cart_items_list = CarritoItem.objects.filter(id_carrito=cart).select_related('id_producto')
 
@@ -780,14 +757,43 @@ def comprar(request):
             print("DEBUG comprar (POST): Inicio de creación de pedido.")
             costo_envio_str = request.POST.get('costo_envio', '0')
             try:
-                costo_envio = Decimal(costo_envio_str) # Asegúrate que sea Decimal
+                costo_envio = Decimal(costo_envio_str)
             except (ValueError, InvalidOperation):
                 costo_envio = Decimal('0.00')
+
+            # Identificar cliente
+            cliente_para_pedido = cart.id_cliente
+
+            # Si no hay cliente (usuario no registrado), crearlo desde el formulario
+            if not cliente_para_pedido:
+                nombre = request.POST.get('nombre', 'Cliente')
+                apellido = request.POST.get('apellido', 'NoRegistrado')
+                rut = request.POST.get('rut', '00000000-0')
+                telefono = request.POST.get('telefono', '')
+                email = request.POST.get('email', f'anonimo{timezone.now().timestamp()}@ferremas.cl')
+
+                try:
+                    tipo_cliente = TipoUsuario.objects.get(tipo_rol='Cliente')
+                except TipoUsuario.DoesNotExist:
+                    messages.error(request, "No se encontró el tipo de usuario Cliente.")
+                    return redirect('Ferremas:productos')
+
+                cliente_para_pedido = Usuario.objects.create(
+                    nombre=nombre,
+                    apellido=apellido,
+                    rut=rut,
+                    email=email,
+                    id_tipo_usuario=tipo_cliente
+                )
+                cart.id_cliente = cliente_para_pedido
+                cart.session_key = None
+                cart.save()
+                print(f"DEBUG: Usuario anónimo creado y asociado al carrito: {cliente_para_pedido.id}")
 
             total_productos_calculado = cart.total_calculado
             total_final_pedido = total_productos_calculado + costo_envio
 
-            with transaction.atomic():  # Asegura rollback si algo falla
+            with transaction.atomic():
                 nuevo_pedido = Pedido.objects.create(
                     id_cliente=cliente_para_pedido,
                     estado='Pendiente',
@@ -814,7 +820,6 @@ def comprar(request):
                 if 'previous_session_key_before_login' in request.session:
                     del request.session['previous_session_key_before_login']
 
-                # REDIRECCIÓN A LA SIMULACIÓN INTERNA
                 return redirect('Ferremas:simular_pago_transbank')
 
         except Exception as e:
@@ -823,10 +828,17 @@ def comprar(request):
             messages.error(request, f"Ocurrió un error al procesar tu compra: {str(e)}")
             return redirect('Ferremas:productos')
 
+    # Renderiza la vista (GET)
+    usuario_actual = cart.id_cliente
+    direcciones = Direccion.objects.filter(id_usuario=usuario_actual) if usuario_actual else None
+
     context = {
         'carrito': cart,
         'cart_items': cart_items_list,
-        'usuario_actual': cliente_para_pedido
+        'usuario_actual': usuario_actual,
+        'regiones': Region.objects.all(),
+        'sucursales': Sucursal.objects.all(),
+        'direcciones_usuario': direcciones,
     }
     return render(request, 'web/comprar.html', context)
 
