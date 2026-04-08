@@ -4,24 +4,20 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 from dotenv import load_dotenv
+
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Clave secreta de Django
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'clave-insegura-por-defecto')
-
-# Modo debug controlado por variable de entorno
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-# Hosts permitidos (separados por coma)
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     os.environ.get("RENDER_EXTERNAL_HOSTNAME", "proyecto-ferremas.onrender.com"),
 ]
 
-# Aplicaciones instaladas
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -36,9 +32,9 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
 ]
 
-# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -66,7 +62,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'myProyectoFerremas.wsgi.application'
 
-# Base de datos (PostgreSQL en Supabase)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -78,12 +73,10 @@ DATABASES = {
     }
 }
 
-# Supabase
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
-# Validación de contraseñas
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -91,36 +84,33 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Zona horaria y localización
 LANGUAGE_CODE = 'es-cl'
 TIME_ZONE = 'America/Santiago'
 USE_I18N = True
 USE_TZ = True
 
-# Archivos estáticos y media
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'Ferremas' / 'static',
+]
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
 
-# Cloudinary
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.environ.get("CLOUDINARY_CLOUD_NAME"),
     'API_KEY': os.environ.get("CLOUDINARY_API_KEY"),
     'API_SECRET': os.environ.get("CLOUDINARY_API_SECRET")
 }
 
-#DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'Ferremas/static'),
-# ]
-
-# Para producción (Render)
-if not DEBUG:
-    import django_heroku
-    django_heroku.settings(locals())
-
